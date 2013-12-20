@@ -1,6 +1,8 @@
 """
 
-Who's got a Douglas County criminal warrant?
+Who's got a Douglas County warrant?
+
+TK: error-handling!
 
 """
 
@@ -23,13 +25,16 @@ mech.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.
 mech.set_handle_robots(False)
 
 # define opening url
-baseurl = "http://www.omahasheriff.org/services/warrants/criminal?searchterm="
+baseurl = "http://www.omahasheriff.org/services/warrants/"
+
+# start with criminal warrants ...
+print "PULLING RECORDS FOR:\n"
 
 # loop through the alphabet
 for letter in ascii_lowercase:
 
     # soup!
-    page = mech.open(baseurl + letter)
+    page = mech.open(baseurl + "criminal?searchterm=" + letter)
     html = page.read()
     soup = BeautifulSoup(html)
 
@@ -93,16 +98,72 @@ for letter in ascii_lowercase:
         crime = re.sub(r'\s\s+',' ',chargesraw)
         
         # put it all together
-        fullrecord = (last, rest, crime, age, gender, race, str(height), str(weight), address, warrantnumber, agency, "\n")
+        fullrecord = ("CRIMINAL", last, rest, crime, age, gender, race, str(height), str(weight), address, warrantnumber, agency, "\n")
         
         # write to text file
         f.write("|".join(fullrecord))
 
-        print "PULLING RECORDS FOR " + rest + " " + last
+        print rest + " " + last
 
         # go back ...
         mech.back()
         sleep(1)
 
+# now do tax warrants
+print "==================================\nPULLING RECORDS FOR:\n"
+
+# loop through the alphabet
+for letter in ascii_lowercase:
+
+    # soup!
+    page = mech.open(baseurl + "delinquent-tax?searchterm=" + letter)
+    html = page.read()
+    soup = BeautifulSoup(html)
+
+    # find the correct table
+    table = soup.find('table', {"class" : "warrants"})
+
+    # loop through the table
+    for row in table.findAll('tr')[1:]:
+        col = row.findAll('td')
+
+        # follow link from first entry to detail page
+        link = col[0].a['href']
+        page = mech.open(link)
+        html = page.read()
+        soup = BeautifulSoup(html)
+        
+        # hacky workaround to replace multi-line addresses
+        for q in soup.findAll('br'):
+            q.replace_with('||')
+        
+        # target the correct table
+        results = soup.find('div', {'id': 'bodybottom'}).find('table', {'border': '0'})
+        thing = results.findAll('tr')
+        # warrant number
+        warrantnumber = thing[0].findAll('td')[1].get_text(strip=True)
+        
+        # name
+        taxname = thing[1].findAll('td')[1].get_text(strip=True)
+                
+        # carve out the address
+        addressraw = thing[2].findAll('td')[1].get_text(strip=True).encode('utf-8').replace('||',' ')
+        address = re.sub(r'\s\s+', ' ', addressraw)
+                    
+        # amount owed
+        owed = thing[3].findAll('td')[1].get_text(strip=True)
+        
+        # put it all together
+        fullrecord = ("TAX", taxname, address, warrantnumber, owed, "\n")
+        
+        # write to text file
+        f.write("|".join(fullrecord))
+
+        print taxname
+        
+        # go back ...
+        mech.back()
+        sleep(1)
+        
 f.flush()
 f.close()
