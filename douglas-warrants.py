@@ -107,7 +107,7 @@ for letter in ascii_lowercase:
 
         # go back ...
         mech.back()
-        sleep(1)
+        sleep(2)
 
 # now do tax warrants
 print "==================================\nPULLING RECORDS FOR:\n"
@@ -163,7 +163,7 @@ for letter in ascii_lowercase:
         
         # go back ...
         mech.back()
-        sleep(1)
+        sleep(2)
         
 f.flush()
 f.close()
