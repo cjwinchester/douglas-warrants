@@ -1,4 +1,4 @@
-douglas-warrants
+Douglas County (Neb.) warrants
 ================
 
-Who's got a criminal warrant in Douglas County?
+Who's got a criminal or tax warrant in Douglas County?
